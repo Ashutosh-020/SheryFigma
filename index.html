@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shery Figma</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="./res/shery.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="container">
+    <header>
+        <div class="left">
+            <span class="logo"><img src="./res/shery.svg" alt="sheryLogo"></span>
+            <p>Sheryians Coding School</p>
+        </div>
+        <div class="features">
+            <button id="export-json">Export JSON</button>
+            <button id="export-html">Export HTML</button>
+        </div>
+    </header>
+
+    <aside class="leftP panel">
+        <div class="tools">
+            <p>Tools</p>
+            <div class="bottom">
+                <div id="add-rect"><div class="rect"></div></div>
+                <div id="add-text"><div class="text">Text</div></div>
+            </div>
+        </div>
+
+        <p>Properties</p>
+        <div id="props"></div>
+    </aside>
+
+    <main class="workspace">
+        
+    </main>
+
+    <aside class="rightP panel">
+      <p>Layers</p>
+      <div id="layers" class="layers-list"></div>
+    </aside>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
