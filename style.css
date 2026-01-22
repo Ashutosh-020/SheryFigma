@@ -89,7 +89,7 @@ header .left{
 }
 .rect{
     height: 20px;
-    width: 20px;
+    width: 30px;
     border: 1px solid white;
     pointer-events: none;
 }
@@ -106,7 +106,50 @@ header .left{
     pointer-events: none;
 }
 .workspace{
+    position: relative;
     background: linear-gradient(to right, #1f262a 1px, transparent 1px),
                 linear-gradient(to bottom, #1f262a 1px, transparent 1px);
     background-size: 30px 30px;
+}
+
+.selected{
+    outline: 2px solid #4da3ff;
+    outline-offset: 2px;
+    cursor: pointer;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #4da3ff;
+    z-index: 10;
+}
+
+.resize-top {
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+}
+
+.resize-right {
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+}
+
+.resize-bottom {
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+}
+
+.resize-left {
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: ew-resize;
 }
