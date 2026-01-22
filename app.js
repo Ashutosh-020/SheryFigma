@@ -24,6 +24,9 @@ function Rectangle(){ // fn to create rectangle element
     rectBox.style.width = "120px";
     rectBox.style.minHeight = "30px";
     rectBox.style.minWidth = "30px";
+    rectBox.dataset.rotateX = 0;
+    rectBox.dataset.rotateY = 0;
+    rectBox.dataset.rotateZ = 0;
     rectBox.style.backgroundColor = "transparent";
     rectBox.style.border = "1px solid white";
     rectBox.style.position = "absolute";
@@ -44,6 +47,12 @@ function textBox() { // fn to create text box
     text.contentEditable = true; // default settings
     text.style.height = "30px";
     text.style.width = "90px"
+    text.style.minHeight = "30px";
+    text.style.minWidth = "30px";
+    text.style.fontSize = "clamp(0.5rem, 20px, 3rem)";
+    text.dataset.rotateX = 0;
+    text.dataset.rotateY = 0;
+    text.dataset.rotateZ = 0;
     text.style.textAlign = "center";
     text.textContent = "Edit text";
     text.style.position = 'absolute';
@@ -95,6 +104,15 @@ workspace.addEventListener("mousedown", (e) => {
     selectEle(element);
 });
 
+function applyRotation(element) {
+    const rx = element.dataset.rotateX || 0;
+    const ry = element.dataset.rotateY || 0;
+    const rz = element.dataset.rotateZ || 0;
+
+    element.style.transform =
+        `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+}
+
 function selectEle(ele) {
     if (selectedElement && selectedElement !== ele) {
         selectedElement.classList.remove("selected");
@@ -104,6 +122,7 @@ function selectEle(ele) {
     selectedElement = ele;
     ele.classList.add("selected");
     addResizeHandles(ele);
+    renderRotationControls(ele);
 }
 
 function deselectEle() {
@@ -112,7 +131,44 @@ function deselectEle() {
     selectedElement.classList.remove("selected");
     removeResizeHandles(selectedElement);
     selectedElement = null;
+
+    document.getElementById("props").innerHTML = "";
 }
+
+function renderRotationControls(element) {
+    const props = document.getElementById("props");
+    props.innerHTML = "";
+
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+    wrapper.style.gap = "8px";
+
+    wrapper.innerHTML = `
+        <label>
+            Rotate X
+            <input type="number" data-axis="rotateX" value="${element.dataset.rotateX}">
+        </label>
+        <label>
+            Rotate Y
+            <input type="number" data-axis="rotateY" value="${element.dataset.rotateY}">
+        </label>
+        <label>
+            Rotate Z
+            <input type="number" data-axis="rotateZ" value="${element.dataset.rotateZ}">
+        </label>
+    `;
+
+    wrapper.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", (e) => {
+            element.dataset[e.target.dataset.axis] = e.target.value || 0;
+            applyRotation(element);
+        });
+    });
+
+    props.appendChild(wrapper);
+}
+
 
 function addResizeHandles(element) {
     removeResizeHandles(element);
@@ -155,6 +211,7 @@ workspace.addEventListener("mousemove", (e) => {
             selectedElement.style.height = startHeight - dy + "px";
             selectedElement.style.top = startTop + dy + "px";
         }
+        applyRotation(selectedElement);
 
         return;
     }
@@ -183,6 +240,14 @@ document.addEventListener("mouseup", () => {
 });
 
 window.addEventListener("keydown", (e) => {
+    if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement ||
+        document.activeElement.isContentEditable
+    ) {
+        return;
+    }
+
     if (!selectedElement) {
         return;
     }

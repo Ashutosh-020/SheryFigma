@@ -71,6 +71,9 @@ header .left{
     flex-direction: column;
     gap: 5px;
 }
+.leftP p{
+    margin-bottom: 20px;
+}
 .tools .bottom{
     display: flex;
     align-items: center;
@@ -79,6 +82,26 @@ header .left{
     padding: 10px 0;
     margin-bottom: 10px;
 }
+
+#props input {
+    background: #111417;
+    border: 1px solid #1f262a;
+    color: #e6eef6;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    width: 60px;
+    margin-left: 8px;
+}
+#props label {
+    color: #9aa3ad;
+    font-size: 12px;
+}
+
+.rightP{
+    margin-bottom: 20px;
+}
+
 #add-rect, #add-text{
     background: #111417;
     border: 1px solid #1f262a;
