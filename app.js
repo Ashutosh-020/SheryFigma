@@ -1,5 +1,8 @@
 const createTool = document.querySelector(".bottom");
 const workspace = document.querySelector(".workspace");
+const layersPanel = document.getElementById("layers");
+let layerCounter = 0;
+const BASE_Z_INDEX = 1;
 
 createTool.addEventListener('click',(ele)=>{ // event delegation/bubbling to create element
     if(ele.target.id === "add-rect"){
@@ -31,7 +34,11 @@ function Rectangle(){ // fn to create rectangle element
     rectBox.style.border = "1px solid white";
     rectBox.style.position = "absolute";
 
+    rectBox.dataset.layerId = `layer-${++layerCounter}`;
+    rectBox.style.zIndex = BASE_Z_INDEX + layerCounter;
+
     workspace.appendChild(rectBox);
+    renderLayers();
 }
 
 let textCount = 0;
@@ -57,7 +64,11 @@ function textBox() { // fn to create text box
     text.textContent = "Edit text";
     text.style.position = 'absolute';
 
+    text.dataset.layerId = `layer-${++layerCounter}`;
+    text.style.zIndex = BASE_Z_INDEX + layerCounter;
+
     workspace.appendChild(text);
+    renderLayers();
 }
 
 let selectedElement = null;
@@ -123,6 +134,7 @@ function selectEle(ele) {
     ele.classList.add("selected");
     addResizeHandles(ele);
     renderRotationControls(ele);
+    renderLayers();
 }
 
 function deselectEle() {
@@ -133,6 +145,7 @@ function deselectEle() {
     selectedElement = null;
 
     document.getElementById("props").innerHTML = "";
+    renderLayers();
 }
 
 function renderRotationControls(element) {
@@ -169,6 +182,93 @@ function renderRotationControls(element) {
     props.appendChild(wrapper);
 }
 
+function renderLayers() { // Layer section
+    layersPanel.innerHTML = "";
+
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    // Topmost layer first (higher z-index on top)
+    elements
+        .sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))
+        .forEach(el => {
+            const layer = document.createElement("div");
+            layer.className = "layer-item";
+
+            if (el === selectedElement) {
+                layer.classList.add("active");
+            }
+
+            // Floating label on border
+            const label = document.createElement("span");
+            label.className = "layer-label";
+            label.textContent = el.id;
+            label.onclick = () => selectEle(el);
+
+            // Inner content (buttons)
+            const content = document.createElement("div");
+            content.className = "layer-content";
+
+            content.innerHTML = `
+                <div class="layer-btn" title="Move Up">
+                    <i class="ri-arrow-up-line"></i>
+                </div>
+                <div class="layer-btn" title="Move Down">
+                    <i class="ri-arrow-down-line"></i>
+                </div>
+                <div class="layer-btn" title="Toggle Visibility">
+                    <i class="${el.style.display === "none" ? "ri-eye-off-line" : "ri-eye-line"}"></i>
+                </div>
+                <div class="layer-btn" title="Delete">
+                    <i class="ri-delete-bin-line"></i>
+                </div>
+            `;
+
+            const [upBtn, downBtn, eyeBtn, deleteBtn] = content.children;
+
+            // Button actions  
+            upBtn.onclick = () => moveLayer(el, 1);
+            downBtn.onclick = () => moveLayer(el, -1);
+
+            eyeBtn.onclick = () => {
+                el.style.display = el.style.display === "none" ? "block" : "none";
+                renderLayers();
+            };
+
+            deleteBtn.onclick = () => {
+                if (el === selectedElement) deselectEle();
+                el.remove();
+                renderLayers();
+            };
+
+            layer.appendChild(label);
+            layer.appendChild(content);
+            layersPanel.appendChild(layer);
+        });
+}
+
+function moveLayer(element, direction) {
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    // Sort bottom → top
+    elements.sort((a, b) => Number(a.style.zIndex) - Number(b.style.zIndex));
+
+    const index = elements.indexOf(element);
+    const targetIndex = index + direction;
+
+    if (targetIndex < 0 || targetIndex >= elements.length) return;
+
+    // Swap z-index
+    const temp = elements[index].style.zIndex;
+    elements[index].style.zIndex = elements[targetIndex].style.zIndex;
+    elements[targetIndex].style.zIndex = temp;
+
+    // Safety: never go below workspace
+    elements.forEach(el => {
+        el.style.zIndex = Math.max(BASE_Z_INDEX, Number(el.style.zIndex));
+    });
+
+    renderLayers();
+}
 
 function addResizeHandles(element) {
     removeResizeHandles(element);
