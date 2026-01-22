@@ -133,7 +133,7 @@ function selectEle(ele) {
     selectedElement = ele;
     ele.classList.add("selected");
     addResizeHandles(ele);
-    renderRotationControls(ele);
+    renderProperties(ele);
     renderLayers();
 }
 
@@ -148,38 +148,147 @@ function deselectEle() {
     renderLayers();
 }
 
-function renderRotationControls(element) {
+function rgbToHex(rgb) {
+    if (!rgb || rgb === "transparent") return "#000000";
+    const match = rgb.match(/\d+/g);
+    if (!match) return "#000000";
+    return (
+        "#" +
+        match
+            .slice(0, 3)
+            .map(v => parseInt(v).toString(16).padStart(2, "0"))
+            .join("")
+    );
+}
+
+function renderProperties(element) {
     const props = document.getElementById("props");
     props.innerHTML = "";
 
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.flexDirection = "column";
-    wrapper.style.gap = "8px";
+    const isText = element.dataset.type === "text";
 
-    wrapper.innerHTML = `
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.gap = "10px";
+
+    /* ========= ROTATION ========= */
+wrap.innerHTML += `
+    <label>
+        Rotate X
+        <input type="number" value="${element.dataset.rotateX || 0}" data-axis="rotateX">
+    </label>
+
+    <label>
+        Rotate Y
+        <input type="number" value="${element.dataset.rotateY || 0}" data-axis="rotateY">
+    </label>
+
+    <label>
+        Rotate Z
+        <input type="number" value="${element.dataset.rotateZ || 0}" data-axis="rotateZ">
+    </label>
+`;
+
+    /* ========= SIZE ========= */
+    wrap.innerHTML += `
         <label>
-            Rotate X
-            <input type="number" data-axis="rotateX" value="${element.dataset.rotateX}">
+            Width (px)
+            <input type="number" value="${parseInt(element.style.width) || 0}" data-prop="width">
         </label>
+
         <label>
-            Rotate Y
-            <input type="number" data-axis="rotateY" value="${element.dataset.rotateY}">
-        </label>
-        <label>
-            Rotate Z
-            <input type="number" data-axis="rotateZ" value="${element.dataset.rotateZ}">
+            Height (px)
+            <input type="number" value="${parseInt(element.style.height) || 0}" data-prop="height">
         </label>
     `;
 
-    wrapper.querySelectorAll("input").forEach(input => {
-        input.addEventListener("input", (e) => {
-            element.dataset[e.target.dataset.axis] = e.target.value || 0;
-            applyRotation(element);
+    /* ========= BACKGROUND & BORDER ========= */
+    wrap.innerHTML += `
+        <label>
+            Background
+            <input type="color" value="${rgbToHex(element.style.backgroundColor)}" data-prop="backgroundColor">
+        </label>
+
+        <label>
+            Border Color
+            <input type="color" value="${rgbToHex(element.style.borderColor)}" data-prop="borderColor">
+        </label>
+
+        <label>
+            Border Width (px)
+            <input type="number" value="${parseInt(element.style.borderWidth) || 0}" data-prop="borderWidth">
+        </label>
+
+        <label>
+            Border Radius
+            <input type="number" value="${parseInt(element.style.borderRadius) || 0}" data-radius>
+            <select data-radius-unit>
+                <option value="px">px</option>
+                <option value="%">%</option>
+            </select>
+        </label>
+    `;
+
+    /* ========= TEXT ONLY ========= */
+    if (isText) {
+        wrap.innerHTML += `
+            <label>
+                Font Size (px)
+                <input type="number" value="${parseInt(element.style.fontSize) || 16}" data-prop="fontSize">
+            </label>
+
+            <label>
+                Font Color
+                <input type="color" value="${rgbToHex(element.style.color)}" data-prop="color">
+            </label>
+
+            <label>
+                Bold
+                <input type="checkbox" data-font="bold" ${element.style.fontWeight === "bold" ? "checked" : ""}>
+            </label>
+
+            <label>
+                Italic
+                <input type="checkbox" data-font="italic" ${element.style.fontStyle === "italic" ? "checked" : ""}>
+            </label>
+        `;
+    }
+
+    props.appendChild(wrap);
+
+    /* ========= EVENTS ========= */
+    wrap.querySelectorAll("input, select").forEach(ctrl => {
+        ctrl.addEventListener("input", (e) => {
+
+            if (e.target.dataset.axis) {
+                element.dataset[e.target.dataset.axis] = e.target.value || 0;
+                applyRotation(element);
+                return;
+            }
+
+            if (e.target.dataset.prop) {
+                if (e.target.type === "color") {
+                    element.style[e.target.dataset.prop] = e.target.value;
+                } else {
+                    element.style[e.target.dataset.prop] = e.target.value + "px";
+                }
+            }
+
+            if (e.target.dataset.radius !== undefined) {
+                const unit = wrap.querySelector("[data-radius-unit]").value;
+                element.style.borderRadius = e.target.value + unit;
+            }
+
+            if (e.target.dataset.font === "bold") {
+                element.style.fontWeight = e.target.checked ? "bold" : "normal";
+            }
+
+            if (e.target.dataset.font === "italic") {
+                element.style.fontStyle = e.target.checked ? "italic" : "normal";
+            }
         });
     });
-
-    props.appendChild(wrapper);
 }
 
 function renderLayers() { // Layer section
