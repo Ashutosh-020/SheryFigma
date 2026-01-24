@@ -244,6 +244,7 @@ function loadFromLocalStorage() {
     });
 
     renderLayers();
+    clampAllElementsToWorkspace();
 
     // 🔒 SYNC LAYER COUNTER WITH EXISTING Z-INDEX
     const elements = [...workspace.querySelectorAll("[data-type]")];
@@ -665,6 +666,42 @@ function moveLayer(element, direction) {
     saveToLocalStorage();
 }
 
+function clampAllElementsToWorkspace() {
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    const maxWidth = workspace.clientWidth;
+    const maxHeight = workspace.clientHeight;
+
+    elements.forEach(el => {
+        const elWidth = el.offsetWidth;
+        const elHeight = el.offsetHeight;
+
+        let left = el.offsetLeft;
+        let top = el.offsetTop;
+
+        // Clamp X
+        if (left + elWidth > maxWidth) {
+            left = maxWidth - elWidth;
+        }
+        if (left < 0) {
+            left = 0;
+        }
+
+        // Clamp Y
+        if (top + elHeight > maxHeight) {
+            top = maxHeight - elHeight;
+        }
+        if (top < 0) {
+            top = 0;
+        }
+
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+    });
+
+    saveToLocalStorage();
+}
+
 function normalizeZIndex() {
     const elements = [...workspace.querySelectorAll("[data-type]")];
 
@@ -818,5 +855,6 @@ window.addEventListener("keydown", (e) => {
             break;
     }
 });
+window.addEventListener("resize", clampAllElementsToWorkspace);
 
 loadFromLocalStorage();
