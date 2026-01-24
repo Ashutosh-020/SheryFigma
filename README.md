@@ -1,9 +1,9 @@
-# Shery Figma — Figma-Style Design Tool (HTML, CSS, JavaScript)
+# Shery Figma: Figma-Style Design Tool (HTML, CSS, JavaScript)
 
 **Shery Figma** is a **Figma-inspired visual design editor** built using **pure HTML, CSS, and vanilla JavaScript**.  
-This project was developed as part of the **Sheriyans Coding School – Inter Batch Showdown**, a frontend competition focused on testing **core fundamentals, creativity, UI/UX decisions, and real-world problem solving**.
+This project was developed as part of the **Sheriyans Coding School - Inter Batch Showdown**, a frontend competition focused on testing **core fundamentals, creativity, UI/UX decisions, and real-world problem solving**.
 
-The primary goal of this project was to deeply understand **DOM manipulation, pointer events, editor-style state management, and responsive UI design** — **without using Canvas, SVG, frameworks, or external libraries**.
+The primary goal of this project was to deeply understand **DOM manipulation, pointer events, editor-style state management, and responsive UI design without using Canvas, SVG, frameworks, or external libraries**.
 
 🔗 **Live Demo (Hosted on Vercel)**  
 👉 https://shery-figma.vercel.app/
@@ -26,7 +26,7 @@ This project was built for the **Inter Batch Showdown** organized by **Sheriyans
 
 ## 🎨 Project Overview
 
-Shery Figma allows users to **visually design layouts** by creating and manipulating elements inside a workspace — similar to a simplified version of professional tools like Figma.
+Shery Figma allows users to **visually design layouts** by creating and manipulating elements inside a workspace similar to a simplified version of professional tools like Figma.
 
 Core ideas behind the project:
 
@@ -46,10 +46,14 @@ The editor is built with a **mobile-first and responsive mindset**:
 - Fully usable on **touch devices**
 - Works seamlessly on:
   - 📱 Mobile phones
-    ![Mobile View](https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.40.55%E2%80%AFPM.png?raw=true)
+    <p align="center">
+      <img src="https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.40.55%E2%80%AFPM.png?raw=true" alt="HTML export" width="400" height="800" />
+    </p>
   - 📲 Tablets
   - 💻 Desktop
-    ![Desktop View](https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.37.10%E2%80%AFPM.png?raw=true)
+    <p align="center">
+      <img src="https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.37.10%E2%80%AFPM.png?raw=true" alt="HTML export" width="700" />
+    </p>
 
 - Layout adapts dynamically:
   - **Mobile:** stacked panels
@@ -60,12 +64,12 @@ The editor is built with a **mobile-first and responsive mindset**:
 
 ## 🛠️ Technologies Used
 
-- **HTML5** — Semantic structure and layout
-- **CSS3** — Grid, Flexbox, media queries, responsive units
-- **JavaScript (Vanilla)** — Core logic, DOM updates, state handling
-- **Pointer Events API** — Unified mouse + touch interactions
-- **LocalStorage API** — Persistent editor state
-- **Vercel** — Deployment and hosting
+- **HTML5** - Semantic structure and layout
+- **CSS3** - Grid, Flexbox, media queries, responsive units
+- **JavaScript (Vanilla)** - Core logic, DOM updates, state handling
+- **Pointer Events API** - Unified mouse + touch interactions
+- **LocalStorage API** - Persistent editor state
+- **Vercel** - Deployment and hosting
 
 > No frameworks. No libraries. No Canvas. No SVG.
 
@@ -124,11 +128,15 @@ The editor is built with a **mobile-first and responsive mindset**:
 ### 📤 Export Options
 - **Export as JSON**
   - Clean, formatted layout data
-    ![JSON export](https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.38.16%E2%80%AFPM.png?raw=true)
+    <p align="center">
+      <img src="https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.38.16%E2%80%AFPM.png?raw=true" alt="HTML export" width="500" height="700" />
+    </p>
 - **Export as HTML**
   - Generates a standalone HTML file
   - Uses inline styles to visually recreate the design
-    ![HTML export](https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.37.37%E2%80%AFPM.png?raw=true)
+    <p align="center">
+      <img src="https://github.com/Ashutosh-020/SheryFigma/blob/main/res/Screenshot%202026-01-24%20at%205.37.37%E2%80%AFPM.png?raw=true" alt="HTML export" width="700" />
+    </p>
 ---
 
 ## 🎯 What I Learned
