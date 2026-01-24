@@ -79,7 +79,7 @@ function textBox() { // fn to create text box
 }
 
 let selectedElement = null;
-let isMouseDown = false;
+let isPointerDown = false;
 let offsetX = 0;
 let offsetY = 0;
 let mouseX = 0;
@@ -93,7 +93,9 @@ let startHeight = 0;
 let startLeft = 0;
 let startTop = 0;
 
-workspace.addEventListener("mousedown", (e) => {
+workspace.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+
     const resizeHandle = e.target.closest(".resize-handle");
 
     if (resizeHandle && selectedElement) {
@@ -107,6 +109,7 @@ workspace.addEventListener("mousedown", (e) => {
         startLeft = selectedElement.offsetLeft;
         startTop = selectedElement.offsetTop;
 
+        workspace.setPointerCapture(e.pointerId);
         return;
     }
 
@@ -116,10 +119,12 @@ workspace.addEventListener("mousedown", (e) => {
         return;
     }
 
-    isMouseDown = true;
+    isPointerDown = true;
     offsetX = element.offsetLeft - e.clientX;
     offsetY = element.offsetTop - e.clientY;
+
     selectEle(element);
+    workspace.setPointerCapture(e.pointerId);
 });
 
 function applyRotation(element) {
@@ -732,7 +737,7 @@ function removeResizeHandles(element) {
 }
 
 
-workspace.addEventListener("mousemove", (e) => {
+workspace.addEventListener("pointermove", (e) => {
 
     if (isResizing && selectedElement) {
         const dx = e.clientX - startX;
@@ -760,7 +765,7 @@ workspace.addEventListener("mousemove", (e) => {
         return;
     }
 
-    if (!isMouseDown || !selectedElement) return;
+    if (!isPointerDown || !selectedElement) return;
 
     e.preventDefault();
 
@@ -780,9 +785,14 @@ workspace.addEventListener("mousemove", (e) => {
 });
 
 
-document.addEventListener("mouseup", () => {
-    isMouseDown = false;
+document.addEventListener("pointerup", (e) => {
+    isPointerDown = false;
     isResizing = false;
+
+    if (workspace.hasPointerCapture(e.pointerId)) {
+        workspace.releasePointerCapture(e.pointerId);
+    }
+
     saveToLocalStorage();
 });
 

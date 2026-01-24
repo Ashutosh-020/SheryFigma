@@ -39,6 +39,8 @@ body{
 
 .workspace {
     min-width: 240px;
+    user-select: none;
+    touch-action: none;
 }
 
 header{
