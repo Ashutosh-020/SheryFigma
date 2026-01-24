@@ -4,6 +4,9 @@ const layersPanel = document.getElementById("layers");
 let layerCounter = 0;
 const BASE_Z_INDEX = 1;
 
+document.getElementById("export-json").addEventListener("click", exportJSON);
+document.getElementById("export-html").addEventListener("click", exportHTML);
+
 createTool.addEventListener('click',(ele)=>{ // event delegation/bubbling to create element
     if(ele.target.id === "add-rect"){
         return Rectangle();
@@ -39,6 +42,7 @@ function Rectangle(){ // fn to create rectangle element
 
     workspace.appendChild(rectBox);
     renderLayers();
+    saveToLocalStorage();
 }
 
 let textCount = 0;
@@ -57,6 +61,8 @@ function textBox() { // fn to create text box
     text.style.minHeight = "30px";
     text.style.minWidth = "30px";
     text.style.fontSize = "clamp(0.5rem, 20px, 3rem)";
+    text.style.color = "white";
+    text.style.border = "0px solid white";
     text.dataset.rotateX = 0;
     text.dataset.rotateY = 0;
     text.dataset.rotateZ = 0;
@@ -69,6 +75,7 @@ function textBox() { // fn to create text box
 
     workspace.appendChild(text);
     renderLayers();
+    saveToLocalStorage();
 }
 
 let selectedElement = null;
@@ -148,17 +155,202 @@ function deselectEle() {
     renderLayers();
 }
 
-function rgbToHex(rgb) {
-    if (!rgb || rgb === "transparent") return "#000000";
+function rgbToHex(rgb, fallback = "#ffffff") {
+    if (!rgb || rgb === "transparent") return fallback;
+
+    if (rgb.startsWith("#")) return rgb;
+
     const match = rgb.match(/\d+/g);
-    if (!match) return "#000000";
+    if (!match) return fallback;
+
     return (
-        "#" +
-        match
-            .slice(0, 3)
-            .map(v => parseInt(v).toString(16).padStart(2, "0"))
-            .join("")
+        "#" + match.slice(0, 3).map(v => parseInt(v).toString(16).padStart(2, "0")).join("")
     );
+}
+
+function saveToLocalStorage() {
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    const data = elements.map(el => ({
+        id: el.id,
+        name: el.dataset.name || "",
+        type: el.dataset.type,
+        x: el.offsetLeft,
+        y: el.offsetTop,
+        width: el.style.width,
+        height: el.style.height,
+        zIndex: el.style.zIndex,
+        rotateX: el.dataset.rotateX,
+        rotateY: el.dataset.rotateY,
+        rotateZ: el.dataset.rotateZ,
+        styles: {
+            backgroundColor: el.style.backgroundColor,
+            border: el.style.border,
+            borderRadius: el.style.borderRadius,
+            color: el.style.color,
+            fontSize: el.style.fontSize,
+            fontWeight: el.style.fontWeight,
+            fontStyle: el.style.fontStyle,
+            textAlign: el.style.textAlign
+        },
+        textContent: el.dataset.type === "text" ? el.textContent : ""
+    }));
+
+    localStorage.setItem("figmaLayout", JSON.stringify(data));
+}
+
+function loadFromLocalStorage() {
+    const raw = localStorage.getItem("figmaLayout");
+    if (!raw) return;
+
+    const data = JSON.parse(raw);
+    workspace.innerHTML = "";
+
+    data.forEach(item => {
+        let el = document.createElement("div");
+
+        el.id = item.id;
+        el.dataset.name = item.name;
+        el.dataset.type = item.type;
+
+        el.style.position = "absolute";
+        el.style.left = item.x + "px";
+        el.style.top = item.y + "px";
+        el.style.width = item.width;
+        el.style.height = item.height;
+        el.style.zIndex = item.zIndex;
+
+        el.dataset.rotateX = item.rotateX;
+        el.dataset.rotateY = item.rotateY;
+        el.dataset.rotateZ = item.rotateZ;
+
+        Object.assign(el.style, item.styles);
+
+        if (item.type === "text") {
+            el.contentEditable = true;
+            el.textContent = item.textContent;
+        }
+
+        applyRotation(el);
+        workspace.appendChild(el);
+    });
+    // Sync counters after load
+    rectCount = 0;
+    textCount = 0;
+
+    data.forEach(item => {
+        if (item.type === "rectangle") rectCount++;
+        if (item.type === "text") textCount++;
+    });
+
+    renderLayers();
+
+    // 🔒 SYNC LAYER COUNTER WITH EXISTING Z-INDEX
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    layerCounter = elements.reduce((max, el) => {
+        return Math.max(max, Number(el.style.zIndex));
+    }, BASE_Z_INDEX) - BASE_Z_INDEX;
+
+}
+
+function exportJSON() {
+    const data = localStorage.getItem("figmaLayout");
+    if (!data) {
+        alert("Nothing to export");
+        return;
+    }
+
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "design.json";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+function exportHTML() {
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    if (!elements.length) {
+        alert("Nothing to export");
+        return;
+    }
+
+    let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exported Design</title>
+<style>
+body {
+    margin: 0;
+    background: #0b0e12;
+}
+.canvas {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+</style>
+</head>
+<body>
+<div class="canvas">
+`;
+
+    elements.forEach(el => {
+        const style = `
+position:absolute;
+left:${el.style.left};
+top:${el.style.top};
+width:${el.style.width};
+height:${el.style.height};
+z-index:${el.style.zIndex};
+background:${el.style.backgroundColor};
+border:${el.style.border};
+border-radius:${el.style.borderRadius};
+color:${el.style.color};
+font-size:${el.style.fontSize};
+font-weight:${el.style.fontWeight};
+font-style:${el.style.fontStyle};
+text-align:${el.style.textAlign};
+transform: rotateX(${el.dataset.rotateX}deg)
+           rotateY(${el.dataset.rotateY}deg)
+           rotateZ(${el.dataset.rotateZ}deg);
+`;
+
+        if (el.dataset.type === "text") {
+            html += `
+<div style="${style}">
+${el.textContent}
+</div>
+`;
+        } else {
+            html += `
+<div style="${style}"></div>
+`;
+        }
+    });
+
+    html += `
+</div>
+</body>
+</html>
+`;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "design.html";
+    a.click();
+
+    URL.revokeObjectURL(url);
 }
 
 function renderProperties(element) {
@@ -171,6 +363,35 @@ function renderProperties(element) {
     wrap.style.display = "flex";
     wrap.style.flexDirection = "column";
     wrap.style.gap = "10px";
+
+    const isTransparent =
+    !element.style.backgroundColor ||
+    element.style.backgroundColor === "transparent" ||
+    element.style.backgroundColor === "rgba(0, 0, 0, 0)";
+
+    if (
+        !element.dataset.bgColor &&
+        element.style.backgroundColor &&
+        element.style.backgroundColor !== "transparent"
+    ) {
+        element.dataset.bgColor = rgbToHex(element.style.backgroundColor);
+    }
+
+    let radiusValue = 0;
+    let radiusUnit = "px";
+
+    if (element.style.borderRadius) {
+        radiusValue = parseFloat(element.style.borderRadius);
+        radiusUnit = element.style.borderRadius.includes("%") ? "%" : "px";
+    }
+
+    /* ========= ID & NAME ========= */
+    wrap.innerHTML += `
+        <label>
+            Element ID
+            <input type="text" value="${element.id}" data-meta="id" disabled>
+        </label>
+    `;
 
     /* ========= ROTATION ========= */
 wrap.innerHTML += `
@@ -207,12 +428,17 @@ wrap.innerHTML += `
     wrap.innerHTML += `
         <label>
             Background
-            <input type="color" value="${rgbToHex(element.style.backgroundColor)}" data-prop="backgroundColor">
+            <input type="color" value="${element.dataset.bgColor || "#ffffff"}" data-prop="backgroundColor">
+        </label>
+
+        <label>
+            Transparent
+            <input type="checkbox" data-bg-transparent ${isTransparent ? "checked" : ""}>
         </label>
 
         <label>
             Border Color
-            <input type="color" value="${rgbToHex(element.style.borderColor)}" data-prop="borderColor">
+            <input type="color" value="${rgbToHex(element.style.borderColor || "rgb(255,255,255)")}" data-prop="borderColor">
         </label>
 
         <label>
@@ -222,10 +448,10 @@ wrap.innerHTML += `
 
         <label>
             Border Radius
-            <input type="number" value="${parseInt(element.style.borderRadius) || 0}" data-radius>
+            <input type="number" value="${radiusValue}" data-radius>
             <select data-radius-unit>
-                <option value="px">px</option>
-                <option value="%">%</option>
+                <option value="px" ${radiusUnit === "px" ? "selected" : ""}>px</option>
+                <option value="%" ${radiusUnit === "%" ? "selected" : ""}>%</option>
             </select>
         </label>
     `;
@@ -240,7 +466,7 @@ wrap.innerHTML += `
 
             <label>
                 Font Color
-                <input type="color" value="${rgbToHex(element.style.color)}" data-prop="color">
+                <input type="color" value="${rgbToHex(element.style.color, "#ffffff")}" data-prop="color">
             </label>
 
             <label>
@@ -261,18 +487,71 @@ wrap.innerHTML += `
     wrap.querySelectorAll("input, select").forEach(ctrl => {
         ctrl.addEventListener("input", (e) => {
 
-            if (e.target.dataset.axis) {
-                element.dataset[e.target.dataset.axis] = e.target.value || 0;
-                applyRotation(element);
+            if (e.target.dataset.bgTransparent !== undefined) {
+                if (e.target.checked) {
+                    // Hide background but remember current color
+                    if (
+                        element.style.backgroundColor &&
+                        element.style.backgroundColor !== "transparent"
+                    ) {
+                        element.dataset.bgColor = rgbToHex(element.style.backgroundColor);
+                    }
+                    element.style.backgroundColor = "transparent";
+                } else {
+                    // Restore last chosen color
+                    element.style.backgroundColor =
+                        element.dataset.bgColor || "transparent";
+                }
+                saveToLocalStorage();
                 return;
             }
 
+            // Generic style handler (RESTORED)
             if (e.target.dataset.prop) {
+                const prop = e.target.dataset.prop;
+
                 if (e.target.type === "color") {
-                    element.style[e.target.dataset.prop] = e.target.value;
-                } else {
-                    element.style[e.target.dataset.prop] = e.target.value + "px";
+                    element.style[prop] = e.target.value;
                 }
+                else if (prop === "fontSize") {
+                    element.style.fontSize = e.target.value + "px";
+                }
+                else if (prop === "borderWidth") {
+                    element.style.borderWidth = e.target.value + "px";
+
+                    // Ensure border renders (important for text elements)
+                    if (!element.style.borderStyle) {
+                        element.style.borderStyle = "solid";
+                    }
+                }
+                else {
+                    element.style[prop] = e.target.value + "px";
+                }
+                saveToLocalStorage();
+                return;
+            }
+
+            if (e.target.dataset.axis) {
+                element.dataset[e.target.dataset.axis] = e.target.value || 0;
+                applyRotation(element);
+                saveToLocalStorage();
+                return;
+            }
+
+            if (e.target.dataset.prop === "backgroundColor") {
+                // Always overwrite chosen color
+                element.dataset.bgColor = e.target.value;
+
+                const transparentCheckbox =
+                    wrap.querySelector("[data-bg-transparent]");
+
+                // Apply only if transparent is OFF
+                if (!transparentCheckbox.checked) {
+                    element.style.backgroundColor = e.target.value;
+                }
+
+                saveToLocalStorage();
+                return;
             }
 
             if (e.target.dataset.radius !== undefined) {
@@ -287,6 +566,8 @@ wrap.innerHTML += `
             if (e.target.dataset.font === "italic") {
                 element.style.fontStyle = e.target.checked ? "italic" : "normal";
             }
+
+            saveToLocalStorage();
         });
     });
 }
@@ -346,7 +627,9 @@ function renderLayers() { // Layer section
             deleteBtn.onclick = () => {
                 if (el === selectedElement) deselectEle();
                 el.remove();
+                normalizeZIndex();
                 renderLayers();
+                saveToLocalStorage();
             };
 
             layer.appendChild(label);
@@ -377,6 +660,19 @@ function moveLayer(element, direction) {
     });
 
     renderLayers();
+    saveToLocalStorage();
+}
+
+function normalizeZIndex() {
+    const elements = [...workspace.querySelectorAll("[data-type]")];
+
+    elements
+        .sort((a, b) => Number(a.style.zIndex) - Number(b.style.zIndex))
+        .forEach((el, i) => {
+            el.style.zIndex = BASE_Z_INDEX + i + 1;
+        });
+
+    layerCounter = elements.length;
 }
 
 function addResizeHandles(element) {
@@ -421,7 +717,7 @@ workspace.addEventListener("mousemove", (e) => {
             selectedElement.style.top = startTop + dy + "px";
         }
         applyRotation(selectedElement);
-
+        saveToLocalStorage();
         return;
     }
 
@@ -440,12 +736,15 @@ workspace.addEventListener("mousemove", (e) => {
 
     selectedElement.style.left = mouseX + "px";
     selectedElement.style.top = mouseY + "px";
+
+    saveToLocalStorage();
 });
 
 
 document.addEventListener("mouseup", () => {
     isMouseDown = false;
     isResizing = false;
+    saveToLocalStorage();
 });
 
 window.addEventListener("keydown", (e) => {
@@ -484,6 +783,8 @@ window.addEventListener("keydown", (e) => {
             removeResizeHandles(selectedElement);
             selectedElement.remove();
             selectedElement = null;
+            normalizeZIndex();
+            saveToLocalStorage();
             break;
 
         case "ArrowUp":
@@ -515,3 +816,5 @@ window.addEventListener("keydown", (e) => {
             break;
     }
 });
+
+loadFromLocalStorage();
