@@ -118,6 +118,8 @@ workspace.addEventListener("pointerdown", (e) => {
     // Resize handling
     if (resizeHandle && selectedElement) {
         isResizing = true;
+        isPointerDown = false;
+
         resizeDirection = resizeHandle.dataset.resize;
 
         startX = e.clientX;
@@ -771,24 +773,24 @@ function removeResizeHandles(element) {
 }
 
 workspace.addEventListener("pointermove", (e) => {
-    if (!isPointerDown || !selectedElement) return;
+    if (!selectedElement) return;
 
     const dx = Math.abs(e.clientX - pointerStartX);
     const dy = Math.abs(e.clientY - pointerStartY);
 
-    // TEXT: distinguish drag vs edit
-    if (selectedElement.dataset.type === "text") {
-        // If user moves finger → switch to drag mode
-        if (dx > dragThreshold || dy > dragThreshold) {
-            isTextEditing = false;
-            selectedElement.blur();
-            e.preventDefault();
-        } else {
+    //   TEXT: edit vs drag
+    if (selectedElement.dataset.type === "text" && isTextEditing) {
+        if (dx <= dragThreshold && dy <= dragThreshold) {
             return; // still editing
         }
+
+        // switch to drag
+        isTextEditing = false;
+        selectedElement.blur();
+        e.preventDefault();
     }
 
-    // Resize handling
+    //   RESIZE 
     if (isResizing) {
         const moveX = e.clientX - startX;
         const moveY = e.clientY - startY;
@@ -814,6 +816,8 @@ workspace.addEventListener("pointermove", (e) => {
     }
 
     // DRAG
+    if (!isPointerDown) return;
+
     e.preventDefault();
 
     let mouseX = e.clientX + offsetX;
@@ -822,8 +826,10 @@ workspace.addEventListener("pointermove", (e) => {
     const maxLeft = workspace.clientWidth - selectedElement.offsetWidth;
     const maxTop = workspace.clientHeight - selectedElement.offsetHeight;
 
-    selectedElement.style.left = Math.max(0, Math.min(mouseX, maxLeft)) + "px";
-    selectedElement.style.top = Math.max(0, Math.min(mouseY, maxTop)) + "px";
+    selectedElement.style.left =
+        Math.max(0, Math.min(mouseX, maxLeft)) + "px";
+    selectedElement.style.top =
+        Math.max(0, Math.min(mouseY, maxTop)) + "px";
 
     saveToLocalStorage();
 });
