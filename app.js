@@ -78,6 +78,10 @@ function textBox() { // fn to create text box
     saveToLocalStorage();
 }
 
+let isTextEditing = false;
+let dragThreshold = 6; // px (finger movement tolerance)
+let pointerStartX = 0;
+let pointerStartY = 0;
 let selectedElement = null;
 let isPointerDown = false;
 let offsetX = 0;
@@ -94,10 +98,24 @@ let startLeft = 0;
 let startTop = 0;
 
 workspace.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-
+    const element = e.target.closest("[data-type]");
     const resizeHandle = e.target.closest(".resize-handle");
 
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+
+    // ALWAYS deselect when tapping empty workspace
+    if (!element && !resizeHandle) {
+        if (selectedElement?.dataset.type === "text") {
+            selectedElement.blur();
+            isTextEditing = false;
+        }
+
+        deselectEle();
+        return;
+    }
+
+    // Resize handling
     if (resizeHandle && selectedElement) {
         isResizing = true;
         resizeDirection = resizeHandle.dataset.resize;
@@ -113,11 +131,22 @@ workspace.addEventListener("pointerdown", (e) => {
         return;
     }
 
-    const element = e.target.closest("[data-type]");
-    if (!element) {
-        deselectEle();
+    // TEXT: allow edit + possible drag
+    if (element.dataset.type === "text") {
+        selectEle(element);
+
+        isPointerDown = true;
+        isTextEditing = true;
+
+        offsetX = element.offsetLeft - e.clientX;
+        offsetY = element.offsetTop - e.clientY;
+
+        // DO NOT preventDefault here
         return;
     }
+
+    // Normal drag (non-text)
+    e.preventDefault();
 
     isPointerDown = true;
     offsetX = element.offsetLeft - e.clientX;
@@ -147,6 +176,11 @@ function selectEle(ele) {
     addResizeHandles(ele);
     renderProperties(ele);
     renderLayers();
+
+    // MOBILE TEXT FIX
+    if (ele.dataset.type === "text") {
+        ele.focus();
+    }
 }
 
 function deselectEle() {
@@ -736,37 +770,50 @@ function removeResizeHandles(element) {
     element.querySelectorAll(".resize-handle").forEach(h => h.remove());
 }
 
-
 workspace.addEventListener("pointermove", (e) => {
+    if (!isPointerDown || !selectedElement) return;
 
-    if (isResizing && selectedElement) {
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+    const dx = Math.abs(e.clientX - pointerStartX);
+    const dy = Math.abs(e.clientY - pointerStartY);
+
+    // TEXT: distinguish drag vs edit
+    if (selectedElement.dataset.type === "text") {
+        // If user moves finger → switch to drag mode
+        if (dx > dragThreshold || dy > dragThreshold) {
+            isTextEditing = false;
+            selectedElement.blur();
+            e.preventDefault();
+        } else {
+            return; // still editing
+        }
+    }
+
+    // Resize handling
+    if (isResizing) {
+        const moveX = e.clientX - startX;
+        const moveY = e.clientY - startY;
 
         if (resizeDirection === "right") {
-            selectedElement.style.width = startWidth + dx + "px";
+            selectedElement.style.width = startWidth + moveX + "px";
         }
-
         if (resizeDirection === "bottom") {
-            selectedElement.style.height = startHeight + dy + "px";
+            selectedElement.style.height = startHeight + moveY + "px";
         }
-
         if (resizeDirection === "left") {
-            selectedElement.style.width = startWidth - dx + "px";
-            selectedElement.style.left = startLeft + dx + "px";
+            selectedElement.style.width = startWidth - moveX + "px";
+            selectedElement.style.left = startLeft + moveX + "px";
+        }
+        if (resizeDirection === "top") {
+            selectedElement.style.height = startHeight - moveY + "px";
+            selectedElement.style.top = startTop + moveY + "px";
         }
 
-        if (resizeDirection === "top") {
-            selectedElement.style.height = startHeight - dy + "px";
-            selectedElement.style.top = startTop + dy + "px";
-        }
         applyRotation(selectedElement);
         saveToLocalStorage();
         return;
     }
 
-    if (!isPointerDown || !selectedElement) return;
-
+    // DRAG
     e.preventDefault();
 
     let mouseX = e.clientX + offsetX;
@@ -775,15 +822,11 @@ workspace.addEventListener("pointermove", (e) => {
     const maxLeft = workspace.clientWidth - selectedElement.offsetWidth;
     const maxTop = workspace.clientHeight - selectedElement.offsetHeight;
 
-    mouseX = Math.max(0, Math.min(mouseX, maxLeft));
-    mouseY = Math.max(0, Math.min(mouseY, maxTop));
-
-    selectedElement.style.left = mouseX + "px";
-    selectedElement.style.top = mouseY + "px";
+    selectedElement.style.left = Math.max(0, Math.min(mouseX, maxLeft)) + "px";
+    selectedElement.style.top = Math.max(0, Math.min(mouseY, maxTop)) + "px";
 
     saveToLocalStorage();
 });
-
 
 document.addEventListener("pointerup", (e) => {
     isPointerDown = false;
