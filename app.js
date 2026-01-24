@@ -255,13 +255,15 @@ function loadFromLocalStorage() {
 }
 
 function exportJSON() {
-    const data = localStorage.getItem("figmaLayout");
-    if (!data) {
+    const raw = localStorage.getItem("figmaLayout");
+    if (!raw) {
         alert("Nothing to export");
         return;
     }
 
-    const blob = new Blob([data], { type: "application/json" });
+    const formatted = JSON.stringify(JSON.parse(raw), null, 2);
+
+    const blob = new Blob([formatted], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
